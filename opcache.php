@@ -25,6 +25,7 @@ class OpCacheDataModel
     public function getStatusDataRows()
     {
         $rows = array();
+
         foreach ($this->_status as $key => $value) {
             if ($key === 'scripts') {
                 continue;
@@ -34,24 +35,27 @@ class OpCacheDataModel
                 foreach ($value as $k => $v) {
                     if ($v === false) {
                         $value = 'false';
-                    }
-                    if ($v === true) {
+                    } else {
                         $value = 'true';
                     }
+
                     if ($k === 'used_memory' || $k === 'free_memory' || $k === 'wasted_memory') {
                         $v = $this->_size_for_humans(
                             $v
                         );
                     }
+
                     if ($k === 'current_wasted_percentage' || $k === 'opcache_hit_rate') {
                         $v = number_format(
                                 $v,
                                 2
                             ) . '%';
                     }
+
                     if ($k === 'blacklist_miss_ratio') {
                         $v = number_format($v, 2) . '%';
                     }
+
                     if ($k === 'start_time' || $k === 'last_restart_time') {
                         $v = ($v ? date(DATE_RFC822, $v) : 'never');
                     }
@@ -62,10 +66,10 @@ class OpCacheDataModel
             }
             if ($value === false) {
                 $value = 'false';
-            }
-            if ($value === true) {
+            } else {
                 $value = 'true';
             }
+
             $rows[] = "<tr><th>$key</th><td>$value</td></tr>\n";
         }
 
@@ -75,16 +79,18 @@ class OpCacheDataModel
     public function getConfigDataRows()
     {
         $rows = array();
+
         foreach ($this->_configuration['directives'] as $key => $value) {
             if ($value === false) {
                 $value = 'false';
-            }
-            if ($value === true) {
+            } else {
                 $value = 'true';
             }
+
             if ($key == 'opcache.memory_consumption') {
                 $value = $this->_size_for_humans($value);
             }
+
             $rows[] = "<tr><th>$key</th><td>$value</td></tr>\n";
         }
 
@@ -104,6 +110,7 @@ class OpCacheDataModel
         asort($dirs);
 
         $basename = '';
+
         while (true) {
             if (count($this->_d3Scripts) !=1) break;
             $basename .= DIRECTORY_SEPARATOR . key($this->_d3Scripts);
@@ -114,13 +121,16 @@ class OpCacheDataModel
         $id = 1;
 
         $rows = array();
+
         foreach ($dirs as $dir => $files) {
             $count = count($files);
             $file_plural = $count > 1 ? 's' : null;
             $m = 0;
+
             foreach ($files as $file => $data) {
                 $m += $data["memory_consumption"];
             }
+
             $m = $this->_size_for_humans($m);
 
             if ($count > 1) {
@@ -250,15 +260,21 @@ class OpCacheDataModel
     private function _arrayPset(&$array, $key, $value)
     {
         if (is_null($key)) return $array = $value;
+
         $keys = explode(DIRECTORY_SEPARATOR, ltrim($key, DIRECTORY_SEPARATOR));
+
         while (count($keys) > 1) {
             $key = array_shift($keys);
+            
             if ( ! isset($array[$key]) || ! is_array($array[$key])) {
                 $array[$key] = array();
             }
+
             $array =& $array[$key];
         }
+
         $array[array_shift($keys)] = $value;
+
         return $array;
     }
 
@@ -581,16 +597,20 @@ $dataModel = new OpCacheDataModel();
         }
 
         function change() {
-            // Filter out any zero values to see if there is anything left
-            var remove_zero_values = dataset[this.value].filter(function(value) {
-                return value > 0;
-            });
-
             // Skip if the value is undefined for some reason
-            if (typeof dataset[this.value] !== 'undefined' && remove_zero_values.length > 0) {
-                $('#graph').find('> svg').show();
-                path = path.data(pie(dataset[this.value])); // update the data
-                path.transition().duration(750).attrTween("d", arcTween); // redraw the arcs
+            if (typeof dataset[this.value] !== 'undefined') {
+                // Filter out any zero values to see if there is anything left
+                var remove_zero_values = dataset[this.value].filter(function(value) {
+                    return value > 0;
+                });
+
+                if (remove_zero_values.length > 0) {
+                    $('#graph').find('> svg').show();
+                    path = path.data(pie(dataset[this.value])); // update the data
+                    path.transition().duration(750).attrTween("d", arcTween); // redraw the arcs
+                } else {
+                    $('#graph').find('> svg').hide();
+                }
             // Hide the graph if we can't draw it correctly, not ideal but this works
             } else {
                 $('#graph').find('> svg').hide();
